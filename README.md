@@ -1,46 +1,174 @@
-# Getting Started with Create React App
+# EM Tools Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive React + TypeScript dashboard for managing incubation projects, hiring pipelines, and AI-assisted analytics.
 
-## Available Scripts
+## Quick Start
 
-In the project directory, you can run:
+1. Install dependencies:
+```bash
+npm install
+```
 
-### `npm start`
+2. Start the development server:
+```bash
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+The application will run on `http://localhost:3000`
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+src/
+├── projects/           # Project management components
+│   ├── Overview.tsx    # Executive dashboard
+│   ├── Project.tsx     # Individual project details
+│   ├── Data.tsx        # Editable project data table
+│   └── FunnelChart.tsx # Reusable chart component
+├── hiring/             # Hiring pipeline components
+│   ├── Overview.tsx    # Hiring metrics dashboard
+│   ├── Requisition.tsx # Individual requisition tracking
+│   └── Data.tsx        # Editable candidate data table
+├── Projects.tsx        # Main projects page with tabs
+├── Ask.tsx             # AI chatbot interface
+├── Hiring.tsx          # Main hiring page with tabs
+└── App.tsx             # Main application layout
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Features
 
-### `npm run build`
+### 🚀 Projects Management
+- **Overview Dashboard**: Executive-level metrics for incubation projects
+  - Active projects count and completion times
+  - Time to prototype and graduation decision metrics
+  - Projects by stage distribution (Discovery → Prototype → Validation → Graduation)
+  - Success factors and performance insights
+- **Project Details**: Individual project tracking with dropdown selection
+  - Business problem and target output definition
+  - Key questions the prototype needs to answer
+  - Progress tracking with timeline visualization
+  - Team composition and budget oversight
+- **Data Management**: Fully editable project data table
+  - Inline editing with dropdowns for stages and status
+  - Project lifecycle tracking
+  - Comprehensive project metadata management
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 👥 Hiring Pipeline
+- **Overview Dashboard**: Hiring metrics and KPIs
+  - Open requisitions and average time to fill
+  - Conversion rates and pipeline efficiency
+  - Time to decision metrics
+  - Recent graduations tracking
+- **Requisition Management**: Individual requisition tracking
+  - Detailed requisition information with dropdown selection
+  - Hiring funnel visualization for each role
+  - Stage conversion rates and timeline tracking
+  - Go/no-go decision metrics
+- **Candidate Data**: Editable hiring data table
+  - Candidate pipeline management with inline editing
+  - Stage progression tracking (Applied → Phone Screen → Technical → Onsite → Offer)
+  - Source attribution and status management
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🤖 AI Assistant
+- **Conversational Interface**: ChatGPT-style chat experience
+  - Real-time messaging with typing indicators
+  - Context-aware responses about projects and hiring data
+  - Message history and chat management
+  - Keyboard shortcuts (Enter to send, Shift+Enter for new line)
+- **Business Intelligence**: Simulated AI-powered insights
+  - Project performance analysis
+  - Hiring pipeline optimization suggestions
+  - Data-driven recommendations
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Technology Stack
 
-### `npm run eject`
+- **React 18** with TypeScript for type safety
+- **Ant Design** for comprehensive UI component library
+- **Nivo** for interactive data visualizations and charts
+- **CSS-in-JS** with custom theming and responsive design
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Key Components
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Layout & Navigation
+- **App.tsx**: Main application with sidebar navigation and theming
+- **ConfigProvider**: Custom theme configuration with brand colors
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Data Visualization
+- **FunnelChart**: Reusable horizontal funnel chart component
+- **Progress Charts**: Various progress and metric visualizations
+- **Timeline Components**: Project and hiring timeline tracking
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Interactive Tables
+- **Editable Tables**: Inline editing with Ant Design Table components
+- **Dropdown Selectors**: Stage, status, and category management
+- **Real-time Updates**: Immediate state updates without page refresh
 
-## Learn More
+## Development
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Available Scripts
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run test suite
+- `npm run eject` - Eject from Create React App (irreversible)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Code Organization
+- **Component-based architecture** with clear separation of concerns
+- **TypeScript interfaces** for type safety and better developer experience
+- **Modular folder structure** organized by feature domains
+- **Reusable components** for charts, forms, and data display
+
+### Styling & Theming
+- **Ant Design ConfigProvider** for global theme customization
+- **Custom color scheme** with brand-specific colors
+- **Responsive design** principles throughout the application
+- **Consistent spacing and typography** following design system
+
+## Backend Integration
+
+This frontend is designed to work with the EM Tools FastAPI backend. Key integration points:
+
+- **State Management API**: Store and retrieve application state
+- **Funnel Data API**: Save and load hiring funnel metrics
+- **Future AI Integration**: Ready for real AI API connections
+
+## Environment Variables
+
+Create a `.env.local` file for development:
+```
+REACT_APP_API_URL=http://localhost:8001
+REACT_APP_AI_API_KEY=your_openai_api_key
+```
+
+## Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+The `build` folder contains optimized static files ready for deployment.
+
+### Deployment Options
+- **Vercel**: Automatic deployments with GitHub integration
+- **Netlify**: Static site hosting with continuous deployment
+- **AWS S3 + CloudFront**: Scalable static hosting
+- **Docker**: Containerized deployment
+
+## Future Enhancements
+
+- [ ] Real AI/LLM integration for the assistant
+- [ ] Advanced data export functionality (PDF, Excel)
+- [ ] Real-time notifications and updates
+- [ ] Enhanced mobile responsiveness
+- [ ] User authentication and role-based access
+- [ ] Advanced analytics and custom dashboards
+- [ ] Drag-and-drop interface improvements
+- [ ] Keyboard navigation and accessibility enhancements
+
+## Contributing
+
+1. Follow the existing code structure and naming conventions
+2. Use TypeScript for all new components
+3. Maintain consistent styling with Ant Design components
+4. Add proper error handling and loading states
+5. Test components thoroughly before committing
