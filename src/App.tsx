@@ -3,13 +3,17 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   RobotOutlined,
-  DashboardOutlined,
-  UserSwitchOutlined,
+  FolderOutlined,
+  UserAddOutlined,
+  VideoCameraOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { Button, Layout, Menu, theme, ConfigProvider } from 'antd';
 import Projects from './Projects';
 import Ask from './Ask';
 import Hiring from './Hiring';
+import Meetings from './Meetings';
+import TeamDevelopment from './TeamDevelopment';
 import './App.css';
 
 const { Header, Sider, Content } = Layout;
@@ -29,6 +33,10 @@ function App() {
         return <Ask />;
       case '3':
         return <Hiring />;
+      case '4':
+        return <Meetings />;
+      case '5':
+        return <TeamDevelopment />;
       default:
         return <Projects />;
     }
@@ -38,17 +46,17 @@ function App() {
     <ConfigProvider
       theme={{
         token: {
-          colorBgContainer: 'rgb(246,244,244)',
+          colorBgContainer: 'rgb(244,244,244)',  
         },
         components: {
           Layout: {
-            siderBg: 'rgb(19,39,64)',
-            bodyBg: 'rgb(246,244,244)', //'rgb(72,127,134)', //'rgb(72,127,134)'. 'rgb(19,76,101)', rgb(240,236,218)
+            siderBg: 'rgb(39,60,129)',
+            bodyBg: 'rgb(244,244,244)', //'rgb(72,127,134)', //'rgb(72,127,134)'. 'rgb(19,76,101)', rgb(240,236,218)
           },
           
           Menu: {
-            darkItemBg: 'rgb(19,39,64)',
-            darkItemSelectedBg: 'rgb(112, 187, 214)',
+            darkItemBg: 'rgb(39,60,129)',
+            darkItemSelectedBg: 'rgb(38, 138, 155)',
           },
         },
       }}
@@ -64,7 +72,7 @@ function App() {
             items={[
               {
                 key: '1',
-                icon: <DashboardOutlined />,
+                icon: <FolderOutlined />,
                 label: 'Projects',
               },
               {
@@ -74,8 +82,18 @@ function App() {
               },
               {
                 key: '3',
-                icon: <UserSwitchOutlined />,
+                icon: <VideoCameraOutlined />,
+                label: 'Meetings',
+              },
+              {
+                key: '4',
+                icon: <UserAddOutlined />,
                 label: 'Hiring',
+              },
+              {
+                key: '5',
+                icon: <TeamOutlined />,
+                label: 'Team Development',
               },
             ]}
           />

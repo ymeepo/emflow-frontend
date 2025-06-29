@@ -137,7 +137,7 @@ const Ask = () => {
                 <Avatar 
                   icon={message.isUser ? <UserOutlined /> : <RobotOutlined />}
                   style={{ 
-                    backgroundColor: message.isUser ? 'rgb(240,203,150)' : 'rgb(156,178,141)',
+                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 'rgb(38,138,155)',
                     flexShrink: 0
                   }}
                 />
@@ -146,14 +146,14 @@ const Ask = () => {
                   textAlign: message.isUser ? 'right' : 'left'
                 }}>
                   <div style={{
-                    backgroundColor: message.isUser ? 'rgb(240,203,150)' : 'rgb(156,178,141)',
-                    color: message.isUser ? 'white' : 'black',
+                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 'rgb(38,138,155)',
+                    color: 'rgb(251,249,250)',
                     padding: '12px 16px',
                     borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     display: 'inline-block',
                     wordBreak: 'break-word'
                   }}>
-                    <Text style={{ color: message.isUser ? 'white' : 'inherit' }}>
+                    <Text style={{ color: message.isUser ? 'rgb(251,249,250)' : 'inherit' }}>
                       {message.text}
                     </Text>
                   </div>

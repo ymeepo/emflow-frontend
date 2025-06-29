@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { ResponsiveFunnel } from '@nivo/funnel';
 
 interface FunnelChartProps {
@@ -10,6 +11,17 @@ interface FunnelChartProps {
 }
 
 const FunnelChart = ({ data, height = '400px' }: FunnelChartProps) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Debounce the initialization to prevent infinite loops
+    const timeoutId = setTimeout(() => {
+      setIsLoaded(true);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   const defaultData = [
     {
       id: 'applicants',
@@ -49,6 +61,14 @@ const FunnelChart = ({ data, height = '400px' }: FunnelChartProps) => {
   ];
 
   const chartData = data || defaultData;
+
+  if (!isLoaded) {
+    return (
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Loading chart...
+      </div>
+    );
+  }
 
   return (
     <div style={{ height }}>
