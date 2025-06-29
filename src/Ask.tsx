@@ -179,10 +179,10 @@ const Ask = () => {
               }}>
                 <Avatar 
                   icon={<RobotOutlined />}
-                  style={{ backgroundColor: '#52c41a' }}
+                  style={{ backgroundColor: 'rgb(38,138,155)' }}
                 />
                 <div style={{
-                  backgroundColor: '#f6f6f6',
+                  backgroundColor: 'rgb(38,138,155,0.2)',
                   padding: '12px 16px',
                   borderRadius: '18px 18px 18px 4px',
                   display: 'inline-block'

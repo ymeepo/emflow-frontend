@@ -52,12 +52,20 @@ function App() {
           Layout: {
             siderBg: 'rgb(39,60,129)',
             bodyBg: 'rgb(244,244,244)', //'rgb(72,127,134)', //'rgb(72,127,134)'. 'rgb(19,76,101)', rgb(240,236,218)
-          },
-          
+          },          
           Menu: {
             darkItemBg: 'rgb(39,60,129)',
             darkItemSelectedBg: 'rgb(38, 138, 155)',
           },
+          Button: {
+            colorPrimary: 'rgb(39,60,129)',
+            colorPrimaryHover: 'rgba(79, 100, 169)',
+          },
+          Input: {
+            // colorBorder: 'rgb(39,60,129)',
+            hoverBorderColor: 'rgb(39,60,129)',
+            activeBorderColor: 'rgb(39,60,129)',
+          }
         },
       }}
     >
