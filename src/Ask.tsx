@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Input, Button, Card, Avatar, Typography, Divider } from 'antd';
-import { SendOutlined, UserOutlined, RobotOutlined, ClearOutlined } from '@ant-design/icons';
+import { Input, Button, Card, Avatar, Typography, Divider, Tag } from 'antd';
+import { SendOutlined, UserOutlined, RobotOutlined, ClearOutlined, LoadingOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -9,20 +9,25 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  status?: 'sending' | 'streaming' | 'complete' | 'error';
+  data?: any;
 }
 
 const Ask = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your AI assistant. I can help you with questions about your projects, data analysis, business insights, and more. What would you like to know?",
+      text: "Hello! I'm your AI assistant. I can help you with questions about your projects, team members, and business insights using our knowledge graph. What would you like to know?",
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'complete'
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStreamingMessage, setCurrentStreamingMessage] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,55 +37,162 @@ const Ask = () => {
     scrollToBottom();
   }, [messages]);
 
-  const simulateAIResponse = (userMessage: string): string => {
-    const responses = [
-      "That's an interesting question! Based on the data patterns I've observed, here's what I think...",
-      "Great question! Let me analyze that for you. From what I can see in your project metrics...",
-      "I'd be happy to help with that. Looking at your current data, here are some insights...",
-      "Excellent point! Based on the trends I'm seeing in your projects and hiring data...",
-      "That's a complex topic. Let me break it down based on the information available...",
-      "I can definitely help with that analysis. Here's what the data suggests...",
-    ];
+  const streamAgentResponse = async (userMessage: string) => {
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    // Create streaming message placeholder
+    const streamingMessage: Message = {
+      id: Date.now() + 1,
+      text: '',
+      isUser: false,
+      timestamp: new Date(),
+      status: 'streaming'
+    };
+
+    setCurrentStreamingMessage(streamingMessage);
     
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    if (userMessage.toLowerCase().includes('project')) {
-      return `${randomResponse} Your incubation projects are showing good progress with an average completion rate of 75%. I notice you have 12 active projects currently, with most in the prototype phase.`;
-    } else if (userMessage.toLowerCase().includes('hiring')) {
-      return `${randomResponse} Your hiring pipeline is performing well with a 5% overall conversion rate. The average time from application to offer is about 4.1 months.`;
-    } else if (userMessage.toLowerCase().includes('data')) {
-      return `${randomResponse} I can see various metrics across your projects and hiring processes. Would you like me to analyze any specific dataset or trend?`;
-    } else {
-      return `${randomResponse} I'm here to help you understand your business metrics, project performance, and hiring analytics. Feel free to ask about any specific area you'd like to explore!`;
+    try {
+      // Make POST request to start streaming
+      const response = await fetch('http://localhost:8001/api/v1/agent/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: userMessage,
+          user_id: 'web-user'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              setCurrentStreamingMessage(prev => {
+                if (!prev) return null;
+                
+                let updatedText = prev.text;
+                let updatedData = prev.data;
+                let updatedStatus = prev.status;
+
+                if (data.type === 'status') {
+                  updatedText += (updatedText ? '\n\n' : '') + `🔄 ${data.message}`;
+                } else if (data.type === 'data') {
+                  updatedText += (updatedText ? '\n\n' : '') + `📊 ${data.message}`;
+                  if (data.data) {
+                    updatedData = { ...updatedData, ...data.data };
+                  }
+                } else if (data.type === 'result') {
+                  updatedText += (updatedText ? '\n\n' : '') + `✅ ${data.message}`;
+                  if (data.data) {
+                    updatedData = { ...updatedData, ...data.data };
+                  }
+                } else if (data.type === 'complete') {
+                  updatedStatus = 'complete';
+                } else if (data.type === 'error') {
+                  updatedText += (updatedText ? '\n\n' : '') + `❌ ${data.message}`;
+                  updatedStatus = 'error';
+                }
+
+                return {
+                  ...prev,
+                  text: updatedText,
+                  data: updatedData,
+                  status: updatedStatus
+                };
+              });
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+
+      // Mark as complete and move to messages
+      setCurrentStreamingMessage(prev => {
+        if (prev) {
+          const completedMessage = { ...prev, status: 'complete' as const };
+          setMessages(prevMessages => [...prevMessages, completedMessage]);
+        }
+        return null;
+      });
+
+    } catch (error) {
+      console.error('Error streaming agent response:', error);
+      
+      const errorMessage: Message = {
+        id: Date.now() + 1,
+        text: `❌ Error: Failed to get response from AI agent. Please try again. (${error})`,
+        isUser: false,
+        timestamp: new Date(),
+        status: 'error'
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      setCurrentStreamingMessage(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const handleSend = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now(),
       text: inputValue,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'complete'
     };
 
+    const messageText = inputValue;
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: Date.now() + 1,
-        text: simulateAIResponse(inputValue),
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
-    }, 1000 + Math.random() * 2000);
+    // Stream AI response
+    await streamAgentResponse(messageText);
   };
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  // Update scroll when streaming message changes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, currentStreamingMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -90,14 +202,22 @@ const Ask = () => {
   };
 
   const clearChat = () => {
+    // Close any active streaming
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    
     setMessages([
       {
         id: 1,
-        text: "Hello! I'm your AI assistant. I can help you with questions about your projects, data analysis, business insights, and more. What would you like to know?",
+        text: "Hello! I'm your AI assistant. I can help you with questions about your projects, team members, and business insights using our knowledge graph. What would you like to know?",
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: 'complete'
       }
     ]);
+    setCurrentStreamingMessage(null);
+    setIsLoading(false);
   };
 
   const formatTime = (date: Date) => {
@@ -135,9 +255,11 @@ const Ask = () => {
                 gap: 8
               }}>
                 <Avatar 
-                  icon={message.isUser ? <UserOutlined /> : <RobotOutlined />}
+                  icon={message.isUser ? <UserOutlined /> : 
+                    message.status === 'streaming' ? <LoadingOutlined spin /> : <RobotOutlined />}
                   style={{ 
-                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 'rgb(38,138,155)',
+                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 
+                      message.status === 'error' ? '#ff4d4f' : 'rgb(38,138,155)',
                     flexShrink: 0
                   }}
                 />
@@ -146,16 +268,29 @@ const Ask = () => {
                   textAlign: message.isUser ? 'right' : 'left'
                 }}>
                   <div style={{
-                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 'rgb(38,138,155)',
+                    backgroundColor: message.isUser ? 'rgb(38,60,129)' : 
+                      message.status === 'error' ? '#ff4d4f' : 'rgb(38,138,155)',
                     color: 'rgb(251,249,250)',
                     padding: '12px 16px',
                     borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     display: 'inline-block',
                     wordBreak: 'break-word'
                   }}>
-                    <Text style={{ color: message.isUser ? 'rgb(251,249,250)' : 'inherit' }}>
+                    <Text style={{ color: 'rgb(251,249,250)', whiteSpace: 'pre-wrap' }}>
                       {message.text}
                     </Text>
+                    {message.status === 'streaming' && (
+                      <div style={{ marginTop: 8 }}>
+                        <Tag color="processing">Streaming...</Tag>
+                      </div>
+                    )}
+                    {message.data && (
+                      <div style={{ marginTop: 8, fontSize: '12px', opacity: 0.8 }}>
+                        <Text style={{ color: 'rgb(251,249,250)' }}>
+                          {JSON.stringify(message.data, null, 2)}
+                        </Text>
+                      </div>
+                    )}
                   </div>
                   <div style={{ 
                     fontSize: '11px', 
@@ -164,13 +299,22 @@ const Ask = () => {
                     textAlign: message.isUser ? 'right' : 'left'
                   }}>
                     {formatTime(message.timestamp)}
+                    {message.status && message.status !== 'complete' && (
+                      <Tag color={
+                        message.status === 'streaming' ? 'processing' :
+                        message.status === 'error' ? 'error' : 'default'
+                      } style={{ marginLeft: 8, fontSize: '10px' }}>
+                        {message.status}
+                      </Tag>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           ))}
           
-          {isLoading && (
+          {/* Show current streaming message */}
+          {currentStreamingMessage && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ 
                 display: 'flex', 
@@ -178,18 +322,32 @@ const Ask = () => {
                 gap: 8
               }}>
                 <Avatar 
-                  icon={<RobotOutlined />}
+                  icon={<LoadingOutlined spin />}
                   style={{ backgroundColor: 'rgb(38,138,155)' }}
                 />
-                <div style={{
-                  backgroundColor: 'rgb(38,138,155,0.2)',
-                  padding: '12px 16px',
-                  borderRadius: '18px 18px 18px 4px',
-                  display: 'inline-block'
-                }}>
-                  <Text style={{ color: '#999' }}>
-                    AI is typing...
-                  </Text>
+                <div style={{ maxWidth: '70%' }}>
+                  <div style={{
+                    backgroundColor: 'rgb(38,138,155)',
+                    color: 'rgb(251,249,250)',
+                    padding: '12px 16px',
+                    borderRadius: '18px 18px 18px 4px',
+                    display: 'inline-block',
+                    wordBreak: 'break-word'
+                  }}>
+                    <Text style={{ color: 'rgb(251,249,250)', whiteSpace: 'pre-wrap' }}>
+                      {currentStreamingMessage.text || 'AI is processing your request...'}
+                    </Text>
+                    <div style={{ marginTop: 8 }}>
+                      <Tag color="processing">Streaming...</Tag>
+                    </div>
+                  </div>
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: '#999', 
+                    marginTop: 4
+                  }}>
+                    {formatTime(currentStreamingMessage.timestamp)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -206,14 +364,14 @@ const Ask = () => {
             onKeyDown={handleKeyDown}
             placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
             autoSize={{ minRows: 1, maxRows: 4 }}
-            disabled={isLoading}
+            disabled={isLoading || currentStreamingMessage !== null}
             style={{ flex: 1 }}
           />
           <Button
             type="primary"
             icon={<SendOutlined />}
             onClick={handleSend}
-            disabled={!inputValue.trim() || isLoading}
+            disabled={!inputValue.trim() || isLoading || currentStreamingMessage !== null}
             style={{ alignSelf: 'flex-end' }}
           >
             Send
